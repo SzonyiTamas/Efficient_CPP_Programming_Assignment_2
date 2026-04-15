@@ -2,6 +2,8 @@
 
 #include "stackNode.h"
 
+#include <stdexcept>
+
 template <typename T>
 class Stack
 {
@@ -27,7 +29,7 @@ private:
     StackNode<T>* topNode{ nullptr };
 
     void clear();
-    StackNode<T>* clone(const StackNode<T>* current) const;
+    StackNode<T>* cloneChain(const StackNode<T>* current) const;
 };
 
 #pragma region Rule of 5 implementation
@@ -59,14 +61,14 @@ Stack<T>& Stack<T>::operator=(const Stack& other)
     }
 
     clear();
-    topNode = clone(other.topNode);
+    topNode = cloneChain(other.topNode);
 
     return *this;
 }
 
 template <typename T>
 Stack<T>::Stack(const Stack& other)
-    : topNode(clone(other.topNode))
+    : topNode(cloneChain(other.topNode))
 {
 }
 
@@ -108,7 +110,7 @@ void Stack<T>::pop()
 {
     if (topNode == nullptr)
     {
-        return;
+        throw std::out_of_range("Cannot pop from an empty stack");
     }
 
     StackNode<T>* nodeToDelete = topNode;
@@ -119,12 +121,22 @@ void Stack<T>::pop()
 template <typename T>
 const T& Stack<T>::top() const
 {
+    if (topNode == nullptr)
+    {
+        throw std::out_of_range("Cannot access top of an empty stack");
+    }
+
     return topNode->data;
 }
 
 template <typename T>
 T& Stack<T>::top()
 {
+    if (topNode == nullptr)
+    {
+        throw std::out_of_range("Cannot access top of an empty stack");
+    }
+
     return topNode->data;
 }
 
@@ -135,16 +147,14 @@ T& Stack<T>::top()
 template <typename T>
 void Stack<T>::clear()
 {
-    while (topNode != nullptr)
+    while (!empty())
     {
-        StackNode<T>* nodeToDelete = topNode;
-        topNode = topNode->next;
-        delete nodeToDelete;
+        pop();
     }
 }
 
 template <typename T>
-StackNode<T>* Stack<T>::clone(const StackNode<T>* current) const
+StackNode<T>* Stack<T>::cloneChain(const StackNode<T>* current) const
 {
     if (current == nullptr)
     {

@@ -7,16 +7,6 @@
 #include <ostream>
 #include <cstddef>
 
-#pragma region Forward declarations
-
-template <typename Key, typename Value>
-class BinarySearchTree;
-
-template <typename Key, typename Value>
-std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& tree);
-
-#pragma endregion
-
 template <typename Key, typename Value>
 class BinarySearchTree
 {
@@ -86,6 +76,9 @@ private:
     Node<Key, Value>*& findMinNodeReference(Node<Key, Value>*& current);
     Node<Key, Value>* clone(const Node<Key, Value>* current) const;
 };
+
+template <typename Key, typename Value>
+std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& tree);
 
 #pragma region Iterator implementation
 
