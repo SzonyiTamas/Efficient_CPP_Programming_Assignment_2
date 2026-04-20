@@ -45,13 +45,14 @@ int main()
 
 	/*for (BinarySearchTree<int, std::string>::Iterator it = tree.begin(); it != tree.end(); ++it)
 	{
-		std::cout << "(" << it->key << ": " << it->value << ") ";
+		auto [key, value] = *it;
+		std::cout << "(" << key << ": " << value << ") ";
 	}
 	std::cout << "\n\n";
 
-	for (const auto& node : tree)
+	for (auto entry : tree)
 	{
-		std::cout << "[" << node.key << " => " << node.value << "] ";
+		std::cout << "[" << entry.first << " => " << entry.second << "] ";
 	}
 	std::cout << "\n\n";*/
 

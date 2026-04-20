@@ -9,7 +9,7 @@ class Stack
 {
 public:
 
-    Stack();
+    Stack() = default;
     ~Stack();
 
     Stack(const Stack& other);
@@ -29,15 +29,11 @@ private:
     StackNode<T>* topNode{ nullptr };
 
     void clear();
+    void popNode();
     StackNode<T>* cloneChain(const StackNode<T>* current) const;
 };
 
 #pragma region Rule of 5 implementation
-
-template <typename T>
-Stack<T>::Stack()
-{
-}
 
 template <typename T>
 Stack<T>::~Stack()
@@ -113,9 +109,7 @@ void Stack<T>::pop()
         throw std::out_of_range("Cannot pop from an empty stack");
     }
 
-    StackNode<T>* nodeToDelete = topNode;
-    topNode = topNode->next;
-    delete nodeToDelete;
+    popNode();
 }
 
 template <typename T>
@@ -145,11 +139,19 @@ T& Stack<T>::top()
 #pragma region Private helpers
 
 template <typename T>
+void Stack<T>::popNode()
+{
+    StackNode<T>* nodeToDelete = topNode;
+    topNode = topNode->next;
+    delete nodeToDelete;
+}
+
+template <typename T>
 void Stack<T>::clear()
 {
     while (!empty())
     {
-        pop();
+        popNode();
     }
 }
 

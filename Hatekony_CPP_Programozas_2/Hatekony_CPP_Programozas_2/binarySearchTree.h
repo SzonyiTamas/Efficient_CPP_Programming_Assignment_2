@@ -6,6 +6,7 @@
 #include <iterator>
 #include <ostream>
 #include <cstddef>
+#include <utility>
 
 template <typename Key, typename Value>
 class BinarySearchTree
@@ -15,10 +16,10 @@ public:
     {
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = Node<Key, Value>;
+        using value_type = std::pair<const Key&, Value&>;
         using difference_type = std::ptrdiff_t;
-        using pointer = Node<Key, Value>*;
-        using reference = Node<Key, Value>&;
+        using pointer = void;
+        using reference = value_type;
 
         Iterator();
         Iterator(Node<Key, Value>* root);
@@ -30,10 +31,7 @@ public:
         Iterator operator++(int);
 
         reference operator*();
-        const value_type& operator*() const;
-
-        pointer operator->();
-        const value_type* operator->() const;
+        reference operator*() const;
 
     private:
         Node<Key, Value>* current{ nullptr };
@@ -43,7 +41,35 @@ public:
         void setCurrentFromPath();
     };
 
-    BinarySearchTree();
+    class ConstIterator
+    {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = std::pair<const Key&, const Value&>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+        using reference = value_type;
+
+        ConstIterator();
+        ConstIterator(const Node<Key, Value>* root);
+
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
+
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+
+        reference operator*() const;
+
+    private:
+        const Node<Key, Value>* current{ nullptr };
+        Stack<const Node<Key, Value>*> path;
+
+        void pushLeftBranch(const Node<Key, Value>* node);
+        void setCurrentFromPath();
+    };
+
+    BinarySearchTree() = default;
     ~BinarySearchTree();
 
     BinarySearchTree(const BinarySearchTree& other);
@@ -61,8 +87,11 @@ public:
     bool remove(const Key& key);
     bool contains(const Key& key) const;
 
-    Iterator begin() const;
-    Iterator end() const;
+    Iterator begin();
+    Iterator end();
+
+    ConstIterator begin() const;
+    ConstIterator end() const;
 
 private:
 
@@ -79,6 +108,97 @@ private:
 
 template <typename Key, typename Value>
 std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& tree);
+
+#pragma region ConstIterator implementation
+
+template <typename Key, typename Value>
+BinarySearchTree<Key, Value>::ConstIterator::ConstIterator(const Node<Key, Value>* root)
+{
+    pushLeftBranch(root);
+    setCurrentFromPath();
+}
+
+template <typename Key, typename Value>
+BinarySearchTree<Key, Value>::ConstIterator::ConstIterator()
+{
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::ConstIterator
+BinarySearchTree<Key, Value>::ConstIterator::operator++(int)
+{
+    ConstIterator temp{ *this };
+    ++(*this);
+    return temp;
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::ConstIterator&
+BinarySearchTree<Key, Value>::ConstIterator::operator++()
+{
+    if (current == nullptr)
+    {
+        return *this;
+    }
+
+    if (current->right != nullptr)
+    {
+        pushLeftBranch(current->right);
+    }
+
+    setCurrentFromPath();
+    return *this;
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::ConstIterator::reference
+BinarySearchTree<Key, Value>::ConstIterator::operator*() const
+{
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
+
+    return { current->key, current->value };
+}
+
+template <typename Key, typename Value>
+bool BinarySearchTree<Key, Value>::ConstIterator::operator==(const ConstIterator& other) const
+{
+    return current == other.current;
+}
+
+template <typename Key, typename Value>
+bool BinarySearchTree<Key, Value>::ConstIterator::operator!=(const ConstIterator& other) const
+{
+    return !(*this == other);
+}
+
+template <typename Key, typename Value>
+void BinarySearchTree<Key, Value>::ConstIterator::setCurrentFromPath()
+{
+    if (path.empty())
+    {
+        current = nullptr;
+    }
+    else
+    {
+        current = path.top();
+        path.pop();
+    }
+}
+
+template <typename Key, typename Value>
+void BinarySearchTree<Key, Value>::ConstIterator::pushLeftBranch(const Node<Key, Value>* node)
+{
+    while (node != nullptr)
+    {
+        path.push(node);
+        node = node->left;
+    }
+}
+
+#pragma endregion
 
 #pragma region Iterator implementation
 
@@ -125,26 +245,24 @@ template <typename Key, typename Value>
 typename BinarySearchTree<Key, Value>::Iterator::reference
 BinarySearchTree<Key, Value>::Iterator::operator*()
 {
-    return *current;
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
+
+    return { current->key, current->value };
 }
 
 template <typename Key, typename Value>
-const Node<Key, Value>& BinarySearchTree<Key, Value>::Iterator::operator*() const
+typename BinarySearchTree<Key, Value>::Iterator::reference
+BinarySearchTree<Key, Value>::Iterator::operator*() const
 {
-    return *current;
-}
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
 
-template <typename Key, typename Value>
-typename BinarySearchTree<Key, Value>::Iterator::pointer
-BinarySearchTree<Key, Value>::Iterator::operator->()
-{
-    return current;
-}
-
-template <typename Key, typename Value>
-const Node<Key, Value>* BinarySearchTree<Key, Value>::Iterator::operator->() const
-{
-    return current;
+    return { current->key, current->value };
 }
 
 template <typename Key, typename Value>
@@ -186,11 +304,6 @@ void BinarySearchTree<Key, Value>::Iterator::pushLeftBranch(Node<Key, Value>* no
 #pragma endregion
 
 #pragma region Rule of 5 implementation
-
-template <typename Key, typename Value>
-BinarySearchTree<Key, Value>::BinarySearchTree()
-{
-}
 
 template <typename Key, typename Value>
 BinarySearchTree<Key, Value>::~BinarySearchTree()
@@ -249,8 +362,8 @@ std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& t
 {
     os << "[";
 
-    typename BinarySearchTree<Key, Value>::Iterator it = tree.begin();
-    typename BinarySearchTree<Key, Value>::Iterator itEnd = tree.end();
+    typename BinarySearchTree<Key, Value>::ConstIterator it = tree.begin();
+    typename BinarySearchTree<Key, Value>::ConstIterator itEnd = tree.end();
 
     bool first = true;
 
@@ -261,7 +374,8 @@ std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& t
             os << ", ";
         }
 
-        os << "(" << it->key << ": " << it->value << ")";
+        auto [key, value] = *it;
+        os << "(" << key << ": " << value << ")";
         first = false;
         ++it;
     }
@@ -275,15 +389,29 @@ std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& t
 #pragma region Iterator access
 
 template <typename Key, typename Value>
-typename BinarySearchTree<Key, Value>::Iterator
+typename BinarySearchTree<Key, Value>::ConstIterator
 BinarySearchTree<Key, Value>::begin() const
+{
+    return ConstIterator(root);
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::ConstIterator
+BinarySearchTree<Key, Value>::end() const
+{
+    return ConstIterator();
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::Iterator
+BinarySearchTree<Key, Value>::begin()
 {
     return Iterator(root);
 }
 
 template <typename Key, typename Value>
 typename BinarySearchTree<Key, Value>::Iterator
-BinarySearchTree<Key, Value>::end() const
+BinarySearchTree<Key, Value>::end()
 {
     return Iterator();
 }
