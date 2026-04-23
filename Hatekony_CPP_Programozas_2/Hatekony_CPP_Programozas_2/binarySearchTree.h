@@ -6,22 +6,22 @@
 #include <iterator>
 #include <ostream>
 #include <cstddef>
-#include <utility>
 
 template <typename Key, typename Value>
 class BinarySearchTree
 {
 public:
+
     class Iterator
     {
     public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = std::pair<const Key&, Value&>;
-        using difference_type = std::ptrdiff_t;
-        using pointer = void;
-        using reference = value_type;
 
-        Iterator();
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = std::pair<const Key, Value>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = value_type*;
+        using reference = value_type&;
+
         Iterator(Node<Key, Value>* root);
 
         bool operator==(const Iterator& other) const;
@@ -31,9 +31,13 @@ public:
         Iterator operator++(int);
 
         reference operator*();
-        reference operator*() const;
+        const value_type& operator*() const;
+
+        pointer operator->();
+        const value_type* operator->() const;
 
     private:
+
         Node<Key, Value>* current{ nullptr };
         Stack<Node<Key, Value>*> path;
 
@@ -44,13 +48,13 @@ public:
     class ConstIterator
     {
     public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = std::pair<const Key&, const Value&>;
-        using difference_type = std::ptrdiff_t;
-        using pointer = void;
-        using reference = value_type;
 
-        ConstIterator();
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = std::pair<const Key, Value>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const value_type*;
+        using reference = const value_type&;
+
         ConstIterator(const Node<Key, Value>* root);
 
         bool operator==(const ConstIterator& other) const;
@@ -60,8 +64,10 @@ public:
         ConstIterator operator++(int);
 
         reference operator*() const;
+        pointer operator->() const;
 
     private:
+
         const Node<Key, Value>* current{ nullptr };
         Stack<const Node<Key, Value>*> path;
 
@@ -106,9 +112,6 @@ private:
     Node<Key, Value>* clone(const Node<Key, Value>* current) const;
 };
 
-template <typename Key, typename Value>
-std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& tree);
-
 #pragma region ConstIterator implementation
 
 template <typename Key, typename Value>
@@ -116,11 +119,6 @@ BinarySearchTree<Key, Value>::ConstIterator::ConstIterator(const Node<Key, Value
 {
     pushLeftBranch(root);
     setCurrentFromPath();
-}
-
-template <typename Key, typename Value>
-BinarySearchTree<Key, Value>::ConstIterator::ConstIterator()
-{
 }
 
 template <typename Key, typename Value>
@@ -159,7 +157,19 @@ BinarySearchTree<Key, Value>::ConstIterator::operator*() const
         throw std::out_of_range("Dereferencing end iterator");
     }
 
-    return { current->key, current->value };
+    return current->data;
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::ConstIterator::pointer
+BinarySearchTree<Key, Value>::ConstIterator::operator->() const
+{
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
+
+    return &current->data;
 }
 
 template <typename Key, typename Value>
@@ -210,11 +220,6 @@ BinarySearchTree<Key, Value>::Iterator::Iterator(Node<Key, Value>* root)
 }
 
 template <typename Key, typename Value>
-BinarySearchTree<Key, Value>::Iterator::Iterator()
-{
-}
-
-template <typename Key, typename Value>
 typename BinarySearchTree<Key, Value>::Iterator
 BinarySearchTree<Key, Value>::Iterator::operator++(int)
 {
@@ -250,11 +255,11 @@ BinarySearchTree<Key, Value>::Iterator::operator*()
         throw std::out_of_range("Dereferencing end iterator");
     }
 
-    return { current->key, current->value };
+    return current->data;
 }
 
 template <typename Key, typename Value>
-typename BinarySearchTree<Key, Value>::Iterator::reference
+const typename BinarySearchTree<Key, Value>::Iterator::value_type&
 BinarySearchTree<Key, Value>::Iterator::operator*() const
 {
     if (current == nullptr)
@@ -262,7 +267,31 @@ BinarySearchTree<Key, Value>::Iterator::operator*() const
         throw std::out_of_range("Dereferencing end iterator");
     }
 
-    return { current->key, current->value };
+    return current->data;
+}
+
+template <typename Key, typename Value>
+typename BinarySearchTree<Key, Value>::Iterator::pointer
+BinarySearchTree<Key, Value>::Iterator::operator->()
+{
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
+
+    return &current->data;
+}
+
+template <typename Key, typename Value>
+const typename BinarySearchTree<Key, Value>::Iterator::value_type*
+BinarySearchTree<Key, Value>::Iterator::operator->() const
+{
+    if (current == nullptr)
+    {
+        throw std::out_of_range("Dereferencing end iterator");
+    }
+
+    return &current->data;
 }
 
 template <typename Key, typename Value>
@@ -362,25 +391,21 @@ std::ostream& operator<<(std::ostream& os, const BinarySearchTree<Key, Value>& t
 {
     os << "[";
 
-    typename BinarySearchTree<Key, Value>::ConstIterator it = tree.begin();
-    typename BinarySearchTree<Key, Value>::ConstIterator itEnd = tree.end();
-
     bool first = true;
 
-    while (it != itEnd)
+    for (const auto& elem : tree)
     {
         if (!first)
         {
             os << ", ";
         }
 
-        auto [key, value] = *it;
-        os << "(" << key << ": " << value << ")";
+        os << "(" << elem.first << ": " << elem.second << ")";
         first = false;
-        ++it;
     }
 
     os << "]";
+
     return os;
 }
 
@@ -399,7 +424,7 @@ template <typename Key, typename Value>
 typename BinarySearchTree<Key, Value>::ConstIterator
 BinarySearchTree<Key, Value>::end() const
 {
-    return ConstIterator();
+    return ConstIterator(nullptr);
 }
 
 template <typename Key, typename Value>
@@ -413,7 +438,7 @@ template <typename Key, typename Value>
 typename BinarySearchTree<Key, Value>::Iterator
 BinarySearchTree<Key, Value>::end()
 {
-    return Iterator();
+    return Iterator(nullptr);
 }
 
 #pragma endregion
@@ -436,7 +461,7 @@ const Value& BinarySearchTree<Key, Value>::operator[](const Key& key) const
         throw std::out_of_range("Key not found in BinarySearchTree");
     }
 
-    return node->value;
+    return node->data.second;
 }
 
 template <typename Key, typename Value>
@@ -449,7 +474,7 @@ Value& BinarySearchTree<Key, Value>::operator[](const Key& key)
         node = new Node<Key, Value>(key, Value());
     }
 
-    return node->value;
+    return node->data.second;
 }
 
 template <typename Key, typename Value>
@@ -489,7 +514,7 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::clone(const Node<Key, Value>* cu
         return nullptr;
     }
 
-    Node<Key, Value>* newNode = new Node<Key, Value>(current->key, current->value);
+    Node<Key, Value>* newNode = new Node<Key, Value>(current->data.first, current->data.second);
     newNode->left = clone(current->left);
     newNode->right = clone(current->right);
 
@@ -515,12 +540,12 @@ bool BinarySearchTree<Key, Value>::remove(Node<Key, Value>*& current, const Key&
         return false;
     }
 
-    if (key < current->key)
+    if (key < current->data.first)
     {
         return remove(current->left, key);
     }
 
-    if (current->key < key)
+    if (current->data.first < key)
     {
         return remove(current->right, key);
     }
@@ -549,14 +574,24 @@ bool BinarySearchTree<Key, Value>::remove(Node<Key, Value>*& current, const Key&
     }
 
     Node<Key, Value>*& successor = findMinNodeReference(current->right);
+    Node<Key, Value>* nodeToReplace = current;
 
-    current->key = successor->key;
-    current->value = successor->value;
+    if (successor == current->right)
+    {
+        current = successor;
+        current->left = nodeToReplace->left;
+    }
+    else
+    {
+        Node<Key, Value>* detachedSuccessor = successor;
+        successor = successor->right;
 
-    Node<Key, Value>* nodeToDelete = successor;
-    successor = successor->right;
-    delete nodeToDelete;
+        detachedSuccessor->left = nodeToReplace->left;
+        detachedSuccessor->right = nodeToReplace->right;
+        current = detachedSuccessor;
+    }
 
+    delete nodeToReplace;
     return true;
 }
 
@@ -569,12 +604,12 @@ bool BinarySearchTree<Key, Value>::insert(Node<Key, Value>*& current, const Key&
         return true;
     }
 
-    if (key == current->key)
+    if (key == current->data.first)
     {
         return false;
     }
 
-    if (key < current->key)
+    if (key < current->data.first)
     {
         return insert(current->left, key, value);
     }
@@ -590,12 +625,12 @@ Node<Key, Value>*& BinarySearchTree<Key, Value>::findNodeReference(Node<Key, Val
         return current;
     }
 
-    if (key == current->key)
+    if (key == current->data.first)
     {
         return current;
     }
 
-    if (key < current->key)
+    if (key < current->data.first)
     {
         return findNodeReference(current->left, key);
     }
@@ -612,12 +647,12 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::findNode(Node<Key, Value>* curre
         return nullptr;
     }
 
-    if (key == current->key)
+    if (key == current->data.first)
     {
         return current;
     }
 
-    if (key < current->key)
+    if (key < current->data.first)
     {
         return findNode(current->left, key);
     }

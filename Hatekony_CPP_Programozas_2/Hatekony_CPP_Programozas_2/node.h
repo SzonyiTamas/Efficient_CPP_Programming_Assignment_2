@@ -1,10 +1,11 @@
 #pragma once
 
+#include <utility>
+
 template <typename Key, typename Value>
 struct Node
 {
-    Key key;
-    Value value;
+    std::pair<const Key, Value> data;
     Node* left{ nullptr };
     Node* right{ nullptr };
 
@@ -13,8 +14,7 @@ struct Node
 
 template <typename Key, typename Value>
 Node<Key, Value>::Node(const Key& key, const Value& value)
-    : key(key)
-    , value(value)
+    : data(key, value)
 {
 }
 
