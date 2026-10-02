@@ -38,3 +38,7 @@ A header-only, templated **key–value binary search tree** (similar in spirit t
 ## Skills demonstrated
 
 `C++17` · `Templates / generic programming` · `Manual memory management` · `RAII` · `Rule of Five & move semantics` · `Custom STL-style iterators` · `Data structures & algorithms` · `Const-correctness` · `Exception safety`
+
+## Author
+
+**Tamás Szőnyi**
